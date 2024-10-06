@@ -1,0 +1,103 @@
+/* Basic Reset */
+* {
+  margin: 0;
+  padding: 0;    
+  font-family: 'verdana';
+  height: fit-content;
+  }
+
+.body {
+  background: url('C:\Users\HP\Desktop\digital watch\dw\src\background.jpg') no-repeat center center fixed;
+  background-size: cover; 
+  height: 100vh; 
+}  
+
+h2{
+  display: flex;
+  justify-content: center;
+  font-size: 6vw;
+  color: white;
+  border-radius: 40px;
+  background-color: rgb(48, 48, 48);
+  box-shadow: inset rgba(0, 0, 0, 0.9);
+}
+
+h2:hover {
+  background-color: rgb(48, 48, 48);
+  color: black;
+}
+
+.selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 2.5vw;
+  color: black;
+  font-weight: bolder;
+  margin-top: 20px;
+}
+select {
+  height: 10vh;
+  width: 20vh;
+  text-align: center;
+  background-color: rgb(158, 156, 156);
+  font-weight: bolder;
+  border-radius: 40px;
+}
+.clock {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  color: black;
+  letter-spacing: 3px;
+  font-size: 10vw;
+  font-weight: bold;   
+}
+
+.clock .flip {
+  position: relative;
+  display: inline-block;
+  margin: 0 10px;
+  perspective: 1000px;  
+  background-color: rgb(158, 156, 156);
+  box-shadow: inset rgba(0, 0, 0, 0.9);
+  border-radius: 40px;
+}
+
+.clock .flip .number {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 1em;
+  height: 1.2em;
+  background-color: rgb(158, 156, 156);
+  box-shadow: inset rgba(0, 0, 0, 0.9);
+  color: black;
+  font-size: 1.5em;
+  border-radius: 10px;
+  transform-style: preserve-3d;
+  transition: all 0.5s ease-in-out;
+}
+
+.separator{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  letter-spacing: 3px;
+  border-radius: 20px;
+  font-size: 10vw;
+  font-weight: bold;  
+}
+
+p {
+  text-align: center;
+  font-size: large;
+  font-weight: bold;
+  background-color: rgb(158, 156, 156);
+  box-shadow: inset rgba(0, 0, 0, 0.9);
+  margin-top: 120px;
+  color: black;
+}
+
