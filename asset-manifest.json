@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/Digital-Watch/static/css/main.d9bbfaba.css",
+    "main.js": "/Digital-Watch/static/js/main.45d202ea.js",
+    "static/js/453.7e5516e7.chunk.js": "/Digital-Watch/static/js/453.7e5516e7.chunk.js",
+    "static/media/background.jpg": "/Digital-Watch/static/media/background.b69a2ef910237d80d0ec.jpg",
+    "index.html": "/Digital-Watch/index.html",
+    "main.d9bbfaba.css.map": "/Digital-Watch/static/css/main.d9bbfaba.css.map",
+    "main.45d202ea.js.map": "/Digital-Watch/static/js/main.45d202ea.js.map",
+    "453.7e5516e7.chunk.js.map": "/Digital-Watch/static/js/453.7e5516e7.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.d9bbfaba.css",
+    "static/js/main.45d202ea.js"
+  ]
+}
