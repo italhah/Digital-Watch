@@ -1,16 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import NavBar from './components/NavBar';
 import Clock from './components/Clock';
 import { locations, defaultLocationIndex } from './data/locations';
 import './styles/global.css';
 
-const TZINFO_API_URL = process.env.REACT_APP_TZINFO_API_URL || process.env.TZINFO_API_URL || '';
-
-if (TZINFO_API_URL) {
-  // TZInfo.org URL is configured for future use; the clock currently uses
-  // the browser's native Intl.DateTimeFormat API and does not call this URL.
-  console.info('Timeon: Using native Intl.DateTimeFormat for timezone data.');
-}
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 function getInitialTheme() {
   const saved = localStorage.getItem('timeon-theme');
@@ -18,28 +13,21 @@ function getInitialTheme() {
   return 'dark';
 }
 
-function getTimeForTimezone(timezone) {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+function padZero(num) {
+  return num < 10 ? `0${num}` : String(num);
+}
 
-  const parts = formatter.formatToParts(new Date());
-  const hour = parts.find((p) => p.type === 'hour').value;
-  const minute = parts.find((p) => p.type === 'minute').value;
-  const second = parts.find((p) => p.type === 'second').value;
-
-  let hours24 = parseInt(hour, 10);
-  const ampm = hours24 >= 12 ? 'PM' : 'AM';
-  let displayHours = hours24 % 12 || 12;
+function getFormattedTime(date) {
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
 
   return {
-    hours: displayHours < 10 ? `0${displayHours}` : String(displayHours),
-    minutes: minute,
-    seconds: second,
+    hours: padZero(hours),
+    minutes: padZero(minutes),
+    seconds: padZero(seconds),
     ampm,
   };
 }
@@ -48,33 +36,83 @@ function App() {
   const [theme, setTheme] = useState(getInitialTheme);
   const [selectedIndex, setSelectedIndex] = useState(defaultLocationIndex);
   const [time, setTime] = useState(null);
+  const [error, setError] = useState(null);
 
   const prevTimeRef = useRef(null);
-  const timezoneRef = useRef(locations[defaultLocationIndex].timezone);
+  const offsetRef = useRef(null);
+  const selectedLocationRef = useRef(locations[defaultLocationIndex]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('timeon-theme', theme);
   }, [theme]);
 
-  useEffect(() => {
-    timezoneRef.current = locations[selectedIndex].timezone;
-    const formatted = getTimeForTimezone(timezoneRef.current);
-    prevTimeRef.current = null;
-    setTime(formatted);
-  }, [selectedIndex]);
+  const fetchTimezone = useCallback(async (timezone) => {
+    try {
+      const url = `${SUPABASE_URL}/functions/v1/timezone-proxy?tz=${encodeURIComponent(timezone)}`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed (${response.status})`);
+      }
+
+      const data = await response.json();
+      if (!data.date_time_txt) {
+        throw new Error('Invalid response from server');
+      }
+
+      const serverTime = new Date(data.date_time_txt);
+      const offset = serverTime.getTime() - Date.now();
+
+      return offset;
+    } catch (err) {
+      throw err;
+    }
+  }, []);
 
   useEffect(() => {
-    if (!time) return;
+    let cancelled = false;
+    const location = locations[selectedIndex];
+    selectedLocationRef.current = location;
+    setError(null);
+
+    fetchTimezone(location.timezone)
+      .then((offset) => {
+        if (cancelled) return;
+        offsetRef.current = offset;
+        const formatted = getFormattedTime(new Date(Date.now() + offset));
+        prevTimeRef.current = time;
+        setTime(formatted);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('Error fetching timezone data:', err);
+        setError('Unable to load time for this location. Please try again.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex, fetchTimezone]);
+
+  useEffect(() => {
+    if (offsetRef.current === null) return;
 
     const interval = setInterval(() => {
-      const formatted = getTimeForTimezone(timezoneRef.current);
+      const formatted = getFormattedTime(new Date(Date.now() + offsetRef.current));
       prevTimeRef.current = time;
       setTime(formatted);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [time]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [time === null, offsetRef.current]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -93,7 +131,13 @@ function App() {
         onThemeToggle={toggleTheme}
       />
       <main className="app-main">
-        <Clock time={time} prevTime={prevTimeRef.current} />
+        {error ? (
+          <div className="clock-container">
+            <div className="clock-error">{error}</div>
+          </div>
+        ) : (
+          <Clock time={time} prevTime={prevTimeRef.current} />
+        )}
       </main>
       <footer className="app-footer">
         Developed by <span className="footer-name">Talha Rahman</span>
