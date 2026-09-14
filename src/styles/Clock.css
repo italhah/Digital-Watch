@@ -1,0 +1,139 @@
+.clock-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex: 1;
+  width: 100%;
+  padding: 0 16px;
+}
+
+.clock-loading {
+  font-size: 2rem;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  opacity: 0.4;
+}
+
+.clock-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 1vw, 12px);
+}
+
+.flip-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.flip-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: clamp(70px, 14vw, 180px);
+  height: clamp(90px, 18vw, 230px);
+  padding: 0 clamp(8px, 1.5vw, 24px);
+  border-radius: 16px;
+  background: var(--flip-bg);
+  box-shadow:
+    var(--flip-shadow-outer),
+    inset 0 2px 0 var(--flip-shadow-inner-top),
+    inset 0 -2px 0 var(--flip-shadow-inner-bottom);
+  overflow: hidden;
+  position: relative;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.flip-card::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--flip-line);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.flip-text {
+  font-family: 'Doto', 'Courier New', monospace;
+  font-size: clamp(48px, 11vw, 140px);
+  font-weight: 700;
+  color: var(--flip-text);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.flip-label {
+  font-size: clamp(9px, 0.9vw, 11px);
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.separator {
+  font-family: 'Doto', 'Courier New', monospace;
+  font-size: clamp(40px, 9vw, 120px);
+  font-weight: 700;
+  color: var(--flip-text);
+  line-height: 1;
+  opacity: 0.6;
+  margin-bottom: clamp(20px, 2.5vw, 28px);
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.2; }
+}
+
+.flip-animate {
+  animation: flipDown 0.4s ease-out;
+}
+
+@keyframes flipDown {
+  0% {
+    transform: rotateX(-90deg);
+    opacity: 0;
+  }
+  100% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+.clock-ampm {
+  font-family: 'Doto', 'Courier New', monospace;
+  font-size: clamp(18px, 2.5vw, 28px);
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.3em;
+}
+
+@media (max-width: 600px) {
+  .flip-card {
+    min-width: clamp(52px, 16vw, 80px);
+    height: clamp(64px, 19vw, 100px);
+    border-radius: 10px;
+  }
+
+  .flip-text {
+    font-size: clamp(30px, 12vw, 56px);
+  }
+
+  .separator {
+    font-size: clamp(24px, 9vw, 44px);
+    margin-bottom: 18px;
+  }
+
+  .clock-container {
+    gap: 16px;
+  }
+}
