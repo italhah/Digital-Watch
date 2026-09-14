@@ -7,15 +7,23 @@ A minimal, premium, distraction-free digital clock with world timezone support, 
 - Large, elegant flip-card digital clock display
 - 150+ country/timezone selection via dropdown
 - Light/dark mode toggle with persistent preference
-- Real-time clock updates with minimal API usage
+- Real-time clock updates with zero external API requests
 - Responsive design for desktop, tablet, and mobile
-- Secure server-side API proxy via Supabase Edge Functions
 
 ## Architecture
 
 - **Frontend**: React (Create React App)
-- **Backend**: Supabase Edge Function proxies IPGeolocation API calls, keeping the API key server-side
-- **Clock ticking**: The API is called only when the user changes the country. The clock then ticks locally using the timezone offset, avoiding repeated API requests.
+- **Timezone data**: The browser's native `Intl.DateTimeFormat` API with IANA timezone identifiers (e.g., `Asia/Karachi`, `Europe/London`, `America/New_York`). These identifiers come from the TZ database maintained by TZInfo.org. No external API calls are made — the clock runs entirely client-side.
+
+### Why no external API?
+
+The previous implementation used IPGeolocation, which imposed daily rate limits. The browser's `Intl.DateTimeFormat` API natively supports all IANA timezone identifiers, making external API calls unnecessary. This means:
+
+- No rate limits
+- No API keys to manage
+- No network latency
+- No server-side proxy required
+- The clock works offline once loaded
 
 ## Getting Started
 
@@ -44,19 +52,18 @@ npm run build
 
 ## Environment Variables
 
-The following are pre-configured in the hosted environment:
+The following are defined in `.env` for future extensibility but are not required for the clock to function:
 
-- `VITE_SUPABASE_URL` — Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` — Supabase anonymous key (used for edge function auth)
-- `IPGEOLOCATION_API_KEY` — IPGeolocation API key (server-side only, configured as an Edge Function secret)
+- `TZINFO_API_URL` — TZInfo.org base URL (not actively called)
+- `TZINFO_API_KEY` — Empty; no key required for the current implementation
 
-The IPGeolocation API key is NEVER exposed in client-side code. It is stored as a Supabase Edge Function secret and accessed only server-side.
+No API credentials are needed. The `.env` file is gitignored and will not be committed.
 
 ## Tech Stack
 
 - React 18
-- Supabase (Edge Functions)
-- IPGeolocation Timezone API
+- Intl.DateTimeFormat (native browser timezone API)
+- IANA Time Zone Database (TZInfo.org)
 - Lucide React (icons)
 
 ---
