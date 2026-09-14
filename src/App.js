@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import NavBar from './components/NavBar';
 import Clock from './components/Clock';
 import { locations, defaultLocationIndex } from './data/locations';
 import './styles/global.css';
 
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
 function getInitialTheme() {
-  const saved = localStorage.getItem('fliqlo-theme');
+  const saved = localStorage.getItem('timeon-theme');
   if (saved === 'light' || saved === 'dark') return saved;
   return 'dark';
 }
@@ -34,41 +36,83 @@ function App() {
   const [theme, setTheme] = useState(getInitialTheme);
   const [selectedIndex, setSelectedIndex] = useState(defaultLocationIndex);
   const [time, setTime] = useState(null);
+  const [error, setError] = useState(null);
+
   const prevTimeRef = useRef(null);
+  const offsetRef = useRef(null);
+  const selectedLocationRef = useRef(locations[defaultLocationIndex]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('fliqlo-theme', theme);
+    localStorage.setItem('timeon-theme', theme);
   }, [theme]);
+
+  const fetchTimezone = useCallback(async (timezone) => {
+    try {
+      const url = `${SUPABASE_URL}/functions/v1/timezone-proxy?tz=${encodeURIComponent(timezone)}`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed (${response.status})`);
+      }
+
+      const data = await response.json();
+      if (!data.date_time_txt) {
+        throw new Error('Invalid response from server');
+      }
+
+      const serverTime = new Date(data.date_time_txt);
+      const offset = serverTime.getTime() - Date.now();
+
+      return offset;
+    } catch (err) {
+      throw err;
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    const selectedLocation = locations[selectedIndex];
+    const location = locations[selectedIndex];
+    selectedLocationRef.current = location;
+    setError(null);
 
-    const fetchTime = async () => {
-      try {
-        const response = await axios.get(
-          `https://api.ipgeolocation.io/timezone?apiKey=6a09f7031bd943e0933f027fec367014&tz=${selectedLocation.timezone}`
-        );
+    fetchTimezone(location.timezone)
+      .then((offset) => {
         if (cancelled) return;
-        const localTime = new Date(response.data.date_time_txt);
-        const formatted = getFormattedTime(localTime);
+        offsetRef.current = offset;
+        const formatted = getFormattedTime(new Date(Date.now() + offset));
         prevTimeRef.current = time;
         setTime(formatted);
-      } catch (error) {
-        console.error('Error fetching time data:', error);
-      }
-    };
-
-    fetchTime();
-    const interval = setInterval(fetchTime, 1000);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('Error fetching timezone data:', err);
+        setError('Unable to load time for this location. Please try again.');
+      });
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex]);
+  }, [selectedIndex, fetchTimezone]);
+
+  useEffect(() => {
+    if (offsetRef.current === null) return;
+
+    const interval = setInterval(() => {
+      const formatted = getFormattedTime(new Date(Date.now() + offsetRef.current));
+      prevTimeRef.current = time;
+      setTime(formatted);
+    }, 1000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [time === null, offsetRef.current]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -87,7 +131,13 @@ function App() {
         onThemeToggle={toggleTheme}
       />
       <main className="app-main">
-        <Clock time={time} prevTime={prevTimeRef.current} />
+        {error ? (
+          <div className="clock-container">
+            <div className="clock-error">{error}</div>
+          </div>
+        ) : (
+          <Clock time={time} prevTime={prevTimeRef.current} />
+        )}
       </main>
       <footer className="app-footer">
         Developed by <span className="footer-name">Talha Rahman</span>

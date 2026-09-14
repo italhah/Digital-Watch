@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
-import { Sun, Moon, Clock3, Globe } from 'lucide-react';
+import { Sun, Moon, Globe } from 'lucide-react';
 import { locations } from '../data/locations';
+import TimeonLogo from './TimeonLogo';
 import '../styles/NavBar.css';
 
 const ThemeToggle = memo(function ThemeToggle({ isDark, onToggle }) {
@@ -20,8 +21,8 @@ function NavBar({ selectedIndex, onLocationChange, isDark, onThemeToggle }) {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Clock3 size={28} className="navbar-logo-icon" strokeWidth={2} />
-        <span className="navbar-title">Fliqlo</span>
+        <TimeonLogo size={28} className="navbar-logo-icon" />
+        <span className="navbar-title">Timeon</span>
       </div>
 
       <div className="navbar-controls">
